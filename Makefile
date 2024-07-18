@@ -1,32 +1,25 @@
-# Имя компилятора
 CC = gcc
 
-# Флаги компилятора
 CFLAGS = -Wall -Wextra -O2
 
-# Исходные файлы
 SRC = entries_tools.c syscalls.c main.c
 
-# Объектные файлы
-OBJ = $(SRC:.c=.o)
+OBJ = $(SRC:%.c=build/%.o)
 
-# Имя исполняемого файла
-OUTPUT = fat32Emulator
+OUTPUT = build/fat32
 
-# Правило по умолчанию
 all: $(OUTPUT)
 
-# Правило сборки исполняемого файла
+build:
+	mkdir -p build
+
 $(OUTPUT): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
-# Правило сборки объектных файлов
-%.o: %.c
+build/%.o: %.c | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Очистка
 clean:
-	rm -f $(OBJ) $(OUTPUT)
-
-# Файлы не являющиеся исходными
-.PHONY: all clean
+	rm -rf build
+	
+.PHONY: all clean build
