@@ -35,7 +35,6 @@ uint32_t find_free_cluster() {
         uint32_t value;
         fread(&value, FAT_ENTRY_SIZE, 1, disk_file);
         if (value == 0) {
-            // Mark as used in FAT
             write_fat_entry(i, 0xFFFFFFFF);
             return i + ROOT_DIR_CLUSTER;
         }
@@ -55,7 +54,7 @@ void read_directory_entries(uint32_t cluster, DirectoryEntry **entries, int *cou
     DirectoryEntry entry;
     while (fread(&entry, sizeof(DirectoryEntry), 1, disk_file) > 0) {
         if (entry.filename[0] == '\0') {
-            break; // End of directory entries
+            break;
         }
 
         *entries = realloc(*entries, (*count + 1) * sizeof(DirectoryEntry));
