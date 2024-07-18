@@ -32,7 +32,6 @@ void master_boot_record(const char *filename)
 }
 
 void format_disk(const char *filename) {
-    // Initialize BootSector
     memset(&boot_sector, 0, sizeof(BootSector));
     boot_sector.bytes_per_sector = SECTOR_SIZE;
     boot_sector.sectors_per_cluster = 1;
@@ -46,14 +45,13 @@ void format_disk(const char *filename) {
     fwrite(&boot_sector, sizeof(BootSector), 1, disk_file);
 
     // Initialize FAT
-    fseek(disk_file, SECTOR_SIZE, SEEK_SET); // FAT starts after reserved sectors
+    fseek(disk_file, SECTOR_SIZE, SEEK_SET);
     uint32_t fat[boot_sector.fat_size_sectors * SECTOR_SIZE / FAT_ENTRY_SIZE];
     memset(fat, 0, sizeof(fat));
     fat[0] = 0x0FFFFFF8; // End of chain marker for FAT[0]
     fat[1] = 0xFFFFFFFF; // End of chain marker for FAT[1]
     fwrite(fat, sizeof(fat), 1, disk_file);
 
-    // Initialize root directory cluster
     fseek(disk_file, SECTOR_SIZE * (1 + boot_sector.fat_size_sectors), SEEK_SET);
     DirectoryEntry root_dir[SECTOR_SIZE / sizeof(DirectoryEntry)];
     memset(root_dir, 0, sizeof(root_dir));
@@ -82,7 +80,6 @@ void create_file(char *filename) {
 
     read_directory_entries(current_dir_cluster, &entries, &entry_count);
 
-    // Check if file already exists
     for (int i = 0; i < entry_count; ++i) {
         if (strcmp(entries[i].filename, filename) == 0 && entries[i].attributes != 0x10) {
             fprintf(stderr, "Error: File '%s' already exists\n", filename);
@@ -95,7 +92,7 @@ void create_file(char *filename) {
 
     DirectoryEntry new_entry;
     strcpy(new_entry.filename, filename);
-    new_entry.attributes = 0x00; // Normal file attribute
+    new_entry.attributes = 0x00;
     new_entry.first_cluster = new_cluster;
     new_entry.size = 0;
 
@@ -113,7 +110,6 @@ void make_directory(char *dirname) {
 
     read_directory_entries(current_dir_cluster, &entries, &entry_count);
 
-    // Check if directory already exists
     for (int i = 0; i < entry_count; ++i) {
         if (strcmp(entries[i].filename, dirname) == 0 && entries[i].attributes == 0x10) {
             fprintf(stderr, "Error: Directory '%s' already exists\n", dirname);
@@ -126,7 +122,7 @@ void make_directory(char *dirname) {
 
     DirectoryEntry new_entry;
     strcpy(new_entry.filename, dirname);
-    new_entry.attributes = 0x10; // Directory attribute
+    new_entry.attributes = 0x10;
     new_entry.first_cluster = new_cluster;
     new_entry.size = 0;
 
@@ -165,13 +161,11 @@ void change_directory(char *dirname) {
             return; // Already at root, do nothing
         }
 
-        // Remove the last part of the path
         char *last_slash = strrchr(current_path, '/');
         if (last_slash != NULL) {
             *last_slash = '\0';
         }
 
-        // Change to the parent directory
         for (int i = 0; i < entry_count; ++i) {
             if (strcmp(entries[i].filename, "..") == 0) {
                 current_dir_cluster = entries[i].first_cluster;
@@ -179,7 +173,6 @@ void change_directory(char *dirname) {
             }
         }
     } else {
-        // Find the directory entry with the given name
         bool found = false;
         for (int i = 0; i < entry_count; ++i) {
             if (strcmp(entries[i].filename, dirname) == 0 && entries[i].attributes == 0x10) {
@@ -190,7 +183,6 @@ void change_directory(char *dirname) {
         }
 
         if (found) {
-            // Append the directory name to the current path
             strcat(current_path, "/");
             strcat(current_path, dirname);
         } else {
